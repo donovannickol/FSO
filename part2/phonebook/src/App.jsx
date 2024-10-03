@@ -30,11 +30,42 @@ const PersonForm = ({addPerson, handleNameChange, handleNumberChange, newName, n
       </form>
 )
 
+const Notification = ({message, error}) => {
+  const notifstyle = {
+    color: 'green',
+    background: 'lightgrey',
+    fontSize: 20,
+    borderStyle: 'solid',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10
+  }
+  const errorstyle = {
+    color: 'red',
+    background: 'lightgrey',
+    fontSize: 20,
+    borderStyle: 'solid',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10
+  }
+  if(message === null){
+    return null
+  }
+  if(error){
+    return (<div style={errorstyle}>{message}</div>)
+  }
+  return (
+    <div style={notifstyle}>{message}</div>
+  )
+}
+
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [notification, setNotification] = useState({message: null, error: false})
 
   useEffect(() => {personService.getAll().then(initialPersons => setPersons(initialPersons))}, [])
 
@@ -49,7 +80,18 @@ const App = () => {
           number: newNumber,
           id: id
         }
-        personService.update(id, personObject).then(returnedPerson => {setPersons(persons.map(p => (p.id == id ? returnedPerson : p)))})
+        personService.update(id, personObject).then(returnedPerson => {
+          setPersons(persons.map(p => (p.id == id ? returnedPerson : p)))
+          setNotification({message: `Updated ${returnedPerson.name}`,error: false})
+          setTimeout(() => {
+            setNotification({message: null,error: false})
+          }, 5000)
+        }).catch(error => {
+          setNotification({message: `Information of ${newName} has already been removed from the server.`, error: true})
+          setTimeout(() => {
+            setNotification({message: null,error: false})
+          }, 5000)
+        })
       }
     }
     else{
@@ -58,7 +100,13 @@ const App = () => {
         number: newNumber,
         id: String(persons.length + 1)
       }
-      personService.create(personObject).then(returnedPerson => {setPersons(persons.concat(returnedPerson))})
+      personService.create(personObject).then(returnedPerson => {
+        setPersons(persons.concat(returnedPerson))
+        setNotification({message: `Added ${returnedPerson.name}`,error: false})
+        setTimeout(() => {
+          setNotification({message: null,error: false})
+        }, 5000)
+      })
     }
     setNewName('')
     setNewNumber('')
@@ -85,6 +133,7 @@ const App = () => {
     return (
       <div>
         <h2>Phonebook</h2>
+        <Notification message={notification.message} error={notification.error}/>
         <Filter searchQuery={searchQuery} handleSearch={handleSearch}/>
         <h2>add a new</h2>
         <PersonForm addPerson={addPerson} handleNameChange={handleNameChange} handleNumberChange={handleNumberChange} newName={newName} newNumber={newNumber} />
